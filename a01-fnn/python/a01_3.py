@@ -1,14 +1,15 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -58,6 +59,13 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # results as above.
 
 # TODO: YOUR CODE HERE
+z1 = x @ W1
+z2 = z1 + b1
+z3 = F.sigmoid(z2)
+z4 = z3 @ W2
+yhat = z4 + b2
+l = torch.pow(y - yhat, 2)
+print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x))}")
 
 # %% [markdown]
 # ## 3b Backward pass
