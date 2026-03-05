@@ -1,13 +1,14 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -87,16 +88,31 @@ class MLP(nn.Module):
         # Initialize and register the parameters. Follow the naming scheme used for
         # logistic regression above, i.e., the layer-i weights should be named "i_weight" and
         # "i_bias".
-        #
-        # TODO: YOUR CODE HERE
+        for i in range(len(sizes) - 1):
+            W = torch.randn(sizes[i], sizes[i + 1]) / math.sqrt(sizes[i])
+            b = torch.randn(sizes[i + 1]) / math.sqrt(sizes[i + 1])
+            self.register_parameter(f"{i}_weight", nn.Parameter(W))
+            self.register_parameter(f"{i}_bias", nn.Parameter(b))
 
     def num_layers(self):
         """Number of layers (excluding input layer)"""
         return len(self.sizes) - 1
 
     def forward(self, x):
-        pass
-        # TODO: YOUR CODE HERE
+        is_vector = False
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            is_vector = True
+        for i in range(self.num_layers()):
+            W = getattr(self, f"{i}_weight")
+            b = getattr(self, f"{i}_bias")
+            x = x @ W + b  # (batch_size, out_dim)
+            if i < self.num_layers() - 1:
+                x = self.phi(x)
+        # If input was a vector, remove batch dimension from output
+        if is_vector:
+            x = x.squeeze(0)
+        return x
 
 
 # %% [markdown]
