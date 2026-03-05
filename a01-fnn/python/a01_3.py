@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -58,7 +59,6 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # Now do this by hand (including all intermediate values). You should get the same
 # results as above.
 
-# TODO: YOUR CODE HERE
 z1 = x @ W1
 z2 = z1 + b1
 z3 = F.sigmoid(z2)
@@ -73,8 +73,23 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # %%
 # Compute results of backward pass on example output (i.e., delta_x, delta_W1, delta_z1,
 # delta_b1, delta_z2, delta_z3, delta_W2, delta_z4, delta_b2, delta_yhat, delta_l, delta_y)
-## TODO: YOUR CODE HERE
 
+delta_l = 1
+delta_yhat = -2 * (y - yhat) * delta_l
+delta_y = 2 * (y - yhat) * delta_l
+
+delta_b2 = delta_yhat
+delta_z4 = delta_yhat
+
+delta_W2 = torch.outer(z3, delta_z4)
+delta_z3 = delta_z4 @ W2.T
+
+delta_z2 = delta_z3 * z3 * (1 - z3)
+delta_b1 = delta_z2
+
+delta_z1 = delta_z2
+delta_W1 = torch.outer(x, delta_z1)
+delta_x  = delta_z1 @ W1.T
 # %%
 # Use PyTorch's backprop
 x.requires_grad = True
