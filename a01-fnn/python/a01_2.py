@@ -1,14 +1,15 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -69,12 +70,27 @@ for par, value in model.state_dict().items():
 # %%
 # now repeat this multiple times
 # TODO: YOUR CODE HERE
+model = train1([2], nreps=50)
+print("Training error:", F.mse_loss(y1, model(X1)).item())
+print("Test error    :", F.mse_loss(y1test, model(X1test)).item())
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model)
+saveplot("a01_2_fit-2-neurons-many-reps.pdf")
 
 # %%
 # From now on, always train multiple times (nreps=10 by default) and report best model.
 model = train1([2], nreps=10)
 print("Training error:", F.mse_loss(y1, model(X1)).item())
 print("Test error    :", F.mse_loss(y1test, model(X1test)).item())
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model)
+saveplot("a01_2_fit-2-neurons-10-reps.pdf")
 
 # %% [markdown]
 # ## 2c Width
@@ -84,14 +100,31 @@ print("Test error    :", F.mse_loss(y1test, model(X1test)).item())
 # models, you may want to save your models using torch.save(model, filename) and
 # load them again using torch.load(filename).
 # TODO: YOUR CODE HERE
+width = [1, 2, 3, 10, 50]
+for width_ in width:
+    model = train1([width_], nreps=10)
+    print(f"Width {width_}:")
+    print("  Training error:", F.mse_loss(y1, model(X1)).item())
+    print("  Test error    :", F.mse_loss(y1test, model(X1test)).item())
+
+    torch.save(model, f"a01_2_fit-{width_}-neurons.pt")
+
+
+# %%
+for width_ in width:
+    model = torch.load(f"a01_2_fit-{width_}-neurons.pt", weights_only=False)
+    nextplot()
+    plot1(X1, y1, label="train")
+    plot1(X1test, y1test, label="test")
+    plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model)
+    saveplot(f"a01_2_fit-{width_}-neurons.pdf")
 
 # %% [markdown]
 # ## 2d Distributed representations
 
 # %%
 # train a model to analyze
-model = train1([2])
-
+model = train1([2], nreps=50)
 # TODO: YOUR CODE HERE
 
 # %%
@@ -101,7 +134,7 @@ nextplot()
 plot1(X1, y1, label="train")
 plot1(X1test, y1test, label="test")
 plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=False)
-saveplot("a01_2_distributed-reps.pdf")
+#saveplot("a01_2_distributed-reps.pdf")
 
 # %%
 # plot the fit as well as the outputs of each neuron in the hidden layer, scaled
@@ -114,7 +147,37 @@ plot1(X1test, y1test, label="test")
 plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=True)
 plt.legend(loc="upper right")
 plt.tight_layout()
-saveplot("a01_2_distributed-reps-scaled.pdf")
+#saveplot("a01_2_distributed-reps-scaled.pdf")
+
+# %%
+model = train1([3], nreps=50)
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=False)
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=True)
+plt.legend(loc="upper right")
+plt.tight_layout()
+
+# %%
+model = train1([10], nreps=50)
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=False)
+
+nextplot()
+plot1(X1, y1, label="train")
+plot1(X1test, y1test, label="test")
+plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=True)
+plt.legend(loc="upper right")
+plt.tight_layout()
 
 # %% [markdown]
 # ## 2e Experiment with different optimizers (optional)
