@@ -107,17 +107,17 @@ for width_ in width:
     print("  Training error:", F.mse_loss(y1, model(X1)).item())
     print("  Test error    :", F.mse_loss(y1test, model(X1test)).item())
 
-    torch.save(model, f"a01_2_fit-{width_}-neurons.pt")
+    torch.save(model, f"../models/a01_2_fit-{width_}-neurons.pt")
 
 
 # %%
 for width_ in width:
-    model = torch.load(f"a01_2_fit-{width_}-neurons.pt", weights_only=False)
+    model = torch.load(f"../models/a01_2_fit-{width_}-neurons.pt", weights_only=False)
     nextplot()
     plot1(X1, y1, label="train")
     plot1(X1test, y1test, label="test")
     plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model)
-    saveplot(f"a01_2_fit-{width_}-neurons.pdf")
+    saveplot(f"plots/a01_2_fit-{width_}-neurons.pdf")
 
 # %% [markdown]
 # ## 2d Distributed representations
@@ -134,7 +134,7 @@ nextplot()
 plot1(X1, y1, label="train")
 plot1(X1test, y1test, label="test")
 plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=False)
-#saveplot("a01_2_distributed-reps.pdf")
+saveplot("plots/a01_2_distributed-reps.pdf")
 
 # %%
 # plot the fit as well as the outputs of each neuron in the hidden layer, scaled
@@ -147,7 +147,7 @@ plot1(X1test, y1test, label="test")
 plot1fit(torch.linspace(0, 13, 500).unsqueeze(1), model, hidden=True, scale=True)
 plt.legend(loc="upper right")
 plt.tight_layout()
-#saveplot("a01_2_distributed-reps-scaled.pdf")
+saveplot("plots/a01_2_distributed-reps-scaled.pdf")
 
 # %%
 model = train1([3], nreps=50)
