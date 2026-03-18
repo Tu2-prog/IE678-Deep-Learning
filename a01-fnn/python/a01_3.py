@@ -65,7 +65,7 @@ z3 = F.sigmoid(z2)
 z4 = z3 @ W2
 yhat = z4 + b2
 l = torch.pow(y - yhat, 2)
-print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x))}")
+print(f"x={x}, y={y}, yhat={yhat}, l={l}")
 
 # %% [markdown]
 # ## 3b Backward pass
@@ -84,7 +84,7 @@ delta_z4 = delta_yhat
 delta_W2 = torch.outer(z3, delta_z4)
 delta_z3 = delta_z4 @ W2.T
 
-delta_z2 = delta_z3 * z3 * (1 - z3)
+delta_z2 = z3 * (1 - z3) * delta_z3
 delta_b1 = delta_z2
 
 delta_z1 = delta_z2
@@ -125,3 +125,5 @@ for v in ["l", "y", "yhat", "b2", "W2", "b1", "W1", "x"]:
     pyt = eval("t_delta_" + v)
     you = torch.tensor(eval("delta_" + v))
     print(f"{v}, pytorch={pyt}, you={you}")
+
+# %%
