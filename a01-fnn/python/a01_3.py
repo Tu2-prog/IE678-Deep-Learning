@@ -58,6 +58,19 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # results as above.
 
 # TODO: YOUR CODE HERE
+z1 = x  # input
+z2 = z1 @ W1 + b1  # linear layer 1: 50 units
+z3 = torch.sigmoid(z2)  # activation (sigmoid)
+z4 = z3 @ W2 + b2  # linear layer 2: 1 unit
+yhat = z4  # output (no activation for regression)
+l = torch.nn.MSELoss()(yhat, y)  # loss
+
+print(f"z1={z1}")
+print(f"z2={z2}")
+print(f"z3={z3}")
+print(f"z4={z4}")
+print(f"yhat={yhat}")
+print(f"l={l}")
 
 # %% [markdown]
 # ## 3b Backward pass
@@ -66,6 +79,33 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # Compute results of backward pass on example output (i.e., delta_x, delta_W1, delta_z1,
 # delta_b1, delta_z2, delta_z3, delta_W2, delta_z4, delta_b2, delta_yhat, delta_l, delta_y)
 ## TODO: YOUR CODE HERE
+delta_l = 1.0
+
+# MSELoss = (yhat - y)^2 for a single element (mean reduction with N=1)
+delta_yhat = 2 * (yhat - y)
+delta_y = -2 * (yhat - y)
+
+# yhat = z4 (identity)
+delta_z4 = delta_yhat
+
+# z4 = z3 @ W2 + b2
+delta_z3 = delta_z4 @ W2.T
+delta_W2 = z3.reshape(-1, 1) @ delta_z4.reshape(1, -1)
+delta_b2 = delta_z4
+
+# z3 = sigmoid(z2), derivative: sigmoid(z2) * (1 - sigmoid(z2)) = z3 * (1 - z3)
+delta_z2 = delta_z3 * z3 * (1 - z3)
+
+# z2 = z1 @ W1 + b1
+delta_z1 = delta_z2 @ W1.T
+delta_W1 = z1.reshape(-1, 1) @ delta_z2.reshape(1, -1)
+delta_b1 = delta_z2
+
+# z1 = x (identity)
+delta_x = delta_z1
+
+for v in ["l", "y", "yhat", "b2", "z4", "W2", "z3", "z2", "b1", "W1", "z1", "x"]:
+    print(f"delta_{v}={eval('delta_' + v)}")
 
 # %%
 # Use PyTorch's backprop
@@ -102,3 +142,5 @@ for v in ["l", "y", "yhat", "b2", "W2", "b1", "W1", "x"]:
     pyt = eval("t_delta_" + v)
     you = torch.tensor(eval("delta_" + v))
     print(f"{v}, pytorch={pyt}, you={you}")
+
+# %%
