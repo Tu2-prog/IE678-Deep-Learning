@@ -26,6 +26,15 @@ import torch.nn.functional as F
 
 # %%
 # `nn.Module` is the superclass of all PyTorch models.
+# 1.a)
+# (i) The weights and biases are initialized with standard tensors of dimensions (D, C) and (C) respectively.
+# The tensors are initialized with random values and then scaled by the square root of D.
+# The parameters are formally stored using the self.register_parameter method. By doing so the parameters are assigned identifiers that
+# allows PyTorch to keep track of them to optimize them during training.
+
+# (ii) The forward pass is a simple linear transformation of the input x using the weight matrix W.
+# This linear transformation gets the softmax function applied to it to get the log probabilities of the classes as outputs.
+# The softmax function works as an activation function that converts the logits to probabilities which is considered standard practice.
 class LogisticRegression(nn.Module):
     """A logistic regression model.
 
@@ -99,10 +108,16 @@ class MLP(nn.Module):
         return len(self.sizes) - 1
 
     def forward(self, x):
+        # Computation is down iteratively for every layer. IMPORTANT: We are not iterating over a tensor here, but just over the number of layers.
         for i in range(self.num_layers()):
+            # The parameters are registerd with unique identifiers. We can access them to get the parameters of our corresponding layer.
             W = self.get_parameter(f"{i}_weight")
             b = self.get_parameter(f"{i}_bias")
-            x = x @ W + b  # (batch_size, out_dim)
+
+            # The output of the layer is the linear transformation of the input x using the weight matrix of the layer with a linear activation function, but only if the current layer is not the output layer.
+            # To support both single input vectors and batches of input vectors, we are simply swapping x and W so the inner dimensions match during this matrix multiplication without the need of using a for loop.
+            # x = x @ W + b <- old method 
+            x = x @ W + b
             if i < self.num_layers() - 1:
                 x = self.phi(x)
         # If input was a vector, remove batch dimension from output
