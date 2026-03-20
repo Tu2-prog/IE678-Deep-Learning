@@ -1,14 +1,16 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -57,20 +59,13 @@ print(f"x={x}, y={y}, yhat={model(x).detach()}, l={torch.nn.MSELoss()(y, model(x
 # Now do this by hand (including all intermediate values). You should get the same
 # results as above.
 
-# TODO: YOUR CODE HERE
-z1 = x  # input
-z2 = z1 @ W1 + b1  # linear layer 1: 50 units
-z3 = torch.sigmoid(z2)  # activation (sigmoid)
-z4 = z3 @ W2 + b2  # linear layer 2: 1 unit
-yhat = z4  # output (no activation for regression)
-l = torch.nn.MSELoss()(yhat, y)  # loss
-
-print(f"z1={z1}")
-print(f"z2={z2}")
-print(f"z3={z3}")
-print(f"z4={z4}")
-print(f"yhat={yhat}")
-print(f"l={l}")
+z1 = x @ W1
+z2 = z1 + b1
+z3 = F.sigmoid(z2)
+z4 = z3 @ W2
+yhat = z4 + b2
+l = torch.pow(y - yhat, 2)
+print(f"x={x}, y={y}, yhat={yhat}, l={l}")
 
 # %% [markdown]
 # ## 3b Backward pass
@@ -107,6 +102,22 @@ delta_x = delta_z1
 for v in ["l", "y", "yhat", "b2", "z4", "W2", "z3", "z2", "b1", "W1", "z1", "x"]:
     print(f"delta_{v}={eval('delta_' + v)}")
 
+delta_l = 1
+delta_yhat = -2 * (y - yhat) * delta_l
+delta_y = 2 * (y - yhat) * delta_l
+
+delta_b2 = delta_yhat
+delta_z4 = delta_yhat
+
+delta_W2 = torch.outer(z3, delta_z4)
+delta_z3 = delta_z4 @ W2.T
+
+delta_z2 = z3 * (1 - z3) * delta_z3
+delta_b1 = delta_z2
+
+delta_z1 = delta_z2
+delta_W1 = torch.outer(x, delta_z1)
+delta_x  = delta_z1 @ W1.T
 # %%
 # Use PyTorch's backprop
 x.requires_grad = True

@@ -1,14 +1,15 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -32,6 +33,10 @@ from a01_functions import LogisticRegression, MLP
 
 # %%
 # let's test it
+# (iii) The model gets initialized with the input dimension D = 3 and output dimension C = 2.
+# The input is a random tensor of dimension 3. The output is the log probabilities of the two classes.
+# After applying the forward pass, we get the log probabilities of the two classes. By applying the inverse
+# operation, the exponential function, we get the actual probailities of the two classes.
 logreg = LogisticRegression(3, 2)
 x = torch.rand(3)  # input
 logreg(x)  # output (log probabilities)
