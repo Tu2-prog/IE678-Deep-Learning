@@ -114,7 +114,7 @@ models = {}
 train_mses = {}
 test_mses = {}
 
-MODEL_DIR = os.path.join(os.getcwd(), "models")
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 for h in hidden_sizes_list:

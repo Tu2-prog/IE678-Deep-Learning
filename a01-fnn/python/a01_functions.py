@@ -97,9 +97,15 @@ class MLP(nn.Module):
         # Initialize and register the parameters. Follow the naming scheme used for
         # logistic regression above, i.e., the layer-i weights should be named "i_weight" and
         # "i_bias".
+        #
+        # TODO: YOUR CODE HERE
         for i in range(len(sizes) - 1):
-            W = torch.randn(sizes[i], sizes[i + 1]) / math.sqrt(sizes[i])
-            b = torch.randn(sizes[i + 1]) / math.sqrt(sizes[i + 1])
+        # Step 1: Extract dimensions from sizes
+            D_in, D_out = sizes[i], sizes[i + 1]
+        # Step 2: Intialize Tensors and Scale for weights and biases
+            W = torch.randn(D_in, D_out) / math.sqrt(D_in)
+            b = torch.randn(D_out) / math.sqrt(D_out)
+        # Step 4: Register
             self.register_parameter(f"{i}_weight", nn.Parameter(W))
             self.register_parameter(f"{i}_bias", nn.Parameter(b))
 
