@@ -53,35 +53,101 @@
 \begin{document}
 
 \title{DL26, Assignment 1}
-\author{\todo{Student 1 name (login, matriculation number)}\\
-\todo{Student 2 name (login, matriculation number)}}
+\author{Anh Tu Duong Nguyen (anguyea, 2115931)\\
+Anh-Nhat Nguyen (anhnnguy, 2034311)}
 \date{\today}
 
 \maketitle
 
 \section*{Task 2a)}
 \begin{answer}[12cm]
-  % YOUR ANSWER HERE
+  \includegraphics[width=200pt]{python/a01_2_data.pdf}
+
+  We conjecture how a fit with ReLU activation would look for different hidden-layer widths:
+  \begin{itemize}\setlength{\itemsep}{0pt}
+    \item[\textbf{(i)}] \textbf{0 hidden neurons:} The network reduces to linear regression. We expect a flat line through the data mean, unable to capture any non-linearity.
+    \item[\textbf{(ii)}] \textbf{1 hidden neuron:} One ReLU unit introduces exactly one bend. We expect a ``V'' shape that captures at most one slope change.
+    \item[\textbf{(iii)}] \textbf{2 hidden neurons:} Two ReLU units allow two bends. We expect an ``N'' shape that roughly outlines a single peak or valley.
+    \item[\textbf{(iv)}] \textbf{3 hidden neurons:} Three ReLU units allow three bends. We expect a ``W'' shape that tracks the data's up--down--up pattern.
+  \end{itemize}
 \end{answer}
 
 \section*{Task 2b)}
 \begin{answer}[14cm]
-  % YOUR ANSWER HERE
+  \noindent\begin{minipage}[t]{0.45\linewidth}
+    \includegraphics[width=\linewidth]{python/a01_2_fit-2-neurons.pdf}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.45\linewidth}
+    \includegraphics[width=\linewidth]{python/a01_2_repeated-fits.pdf}
+  \end{minipage}
+
+  \vspace{0.3em}
+  We train a 2-hidden-neuron FNN and obtain a training MSE of 0.0796 and a test MSE of 0.0867.
+
+  \textbf{(i)} The result differs from our conjecture: instead of an ``N'' shape with sharp bends, the fit produces smooth, compressed step-like transitions. This occurs because the code uses sigmoid activation (not ReLU), which generates smooth S-curves rather than piecewise-linear bends.
+
+  \textbf{(ii)} Repeating training produces inconsistent fits. Different runs converge to distinct local minima with costs of 0.080, 0.287, and 0.303. Random weight initialization places the optimizer at different starting points in a non-convex loss landscape. With only 2 neurons, the landscape contains multiple local minima, and BFGS converges to whichever basin it starts in.
 \end{answer}
 
 \section*{Task 2c)}
 \begin{answer}[14cm]
-  % YOUR ANSWER HERE
+  \noindent\begin{minipage}[c]{0.48\linewidth}
+    \includegraphics[width=\linewidth]{python/a01_2_width-comparison.pdf}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.48\linewidth}
+    \centering
+    \begin{tabular}{r r r}
+      \toprule
+      $h$ & Train MSE & Test MSE \\
+      \midrule
+      1   & 0.3729 & 0.3743 \\
+      2   & 0.0796 & 0.0867 \\
+      3   & 0.0073 & 0.0104 \\
+      10  & 0.0059 & 0.0160 \\
+      50  & 0.0030 & 2.0268 \\
+      100 & 0.0021 & 6.3365 \\
+      \bottomrule
+    \end{tabular}
+  \end{minipage}
+
+  \vspace{0.3em}
+  \textbf{(i)} As $h$ increases, the model transitions through three phases. \emph{Underfitting} ($h{=}1,2$): the network lacks capacity to capture the wave pattern. \emph{Optimal} ($h{=}3$): both MSEs reach low values (0.0073 and 0.0104), indicating the model captures the underlying function without memorizing noise. \emph{Overfitting} ($h{\geq}10$): training MSE continues to decrease, but test MSE diverges sharply (from 0.0160 at $h{=}10$ to 6.3365 at $h{=}100$) as the network memorizes noise.
+
+  \textbf{(ii)} Our conjectures from (a) correctly predicted that $h{=}1$ and $h{=}2$ underfit and $h{=}3$ provides sufficient capacity. We did not anticipate the overfitting at $h{\geq}50$, where the model produces chaotic oscillations between training points.
 \end{answer}
 
 \section*{Task 2d)}
 \begin{answer}[19cm]
-  % YOUR ANSWER HERE
+  \begin{center}
+  \begin{tabular}{@{}c@{\quad}c@{}}
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps.pdf} &
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps-scaled.pdf} \\[-0.3em]
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps-h3.pdf} &
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps-h3-scaled.pdf} \\[-0.3em]
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps-h10.pdf} &
+    \includegraphics[width=110pt]{python/a01_2_distributed-reps-h10-scaled.pdf}
+  \end{tabular}
+  \end{center}
+  \vspace{-0.8em}
+
+  \textbf{(i)} The FNN obtains flexibility through linear combination of non-linear basis functions. Each hidden neuron produces a sigmoid curve; the output layer scales each by a learned weight and sums them. The scaled plots confirm this: the fit line equals the sum of the scaled hidden outputs.
+
+  \textbf{(ii)} The $h{=}2$ representation is not intuitive. The unscaled plot shows two monotonic S-curves that reveal little about the fit. The scaled plot exposes extreme cancellation: weights of ${\approx}\pm547$ produce a peak of height~1.0 by subtracting two large opposing values. This cancellation strategy is mathematically opaque.
+
+  \textbf{(iii)} The $h{=}3$ model is intuitive: output weights drop to $-15$ to $+40$, and each neuron maps to a distinct geometric feature (two valleys and one broad peak). The $h{=}10$ model abandons this interpretability: multiple neurons overlap or oppose each other, weights inflate to $-120$ to $+70$, and individual contributions become opaque.
 \end{answer}
 
 \section*{Task 2e)}
 \begin{answer}[18cm]
-  % YOUR ANSWER HERE
+  \textbf{Optional: Adam optimizer analysis.}
+
+  We train an $h{=}50$ network using the Adam optimizer (learning rate 0.01, 5000 epochs) and compare against BFGS.
+
+  Adam converges smoothly from an initial cost of 3.4, decreasing steadily over the first 2000 epochs before plateauing at approximately 0.35. It never reaches the BFGS optimum of 0.003 for the same architecture.
+
+  This performance gap reflects the difference between first-order and second-order optimization. Adam uses only gradient information and maintains adaptive per-parameter learning rates. It converges stably but lacks curvature information, so it settles in broad, shallow basins. BFGS approximates the Hessian (second-order) and uses curvature to navigate narrow valleys in the loss landscape, reaching deeper minima in fewer iterations.
+
+  For this low-dimensional problem (51 parameters for $h{=}50$), BFGS can afford to maintain its $O(n^2)$ Hessian approximation and achieves a superior solution. In high-dimensional settings (thousands of parameters), Adam's $O(n)$ memory cost and mini-batch compatibility make it the practical choice despite its weaker per-step convergence.
 \end{answer}
 
 \section*{Task 3a)}

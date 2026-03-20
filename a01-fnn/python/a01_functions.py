@@ -89,14 +89,36 @@ class MLP(nn.Module):
         # "i_bias".
         #
         # TODO: YOUR CODE HERE
+        for i in range(len(sizes) - 1):
+        # Step 1: Extract dimensions from sizes
+            D_in, D_out = sizes[i], sizes[i + 1]
+        # Step 2: Intialize Tensors and Scale for weights and biases
+            W = torch.randn(D_in, D_out) / math.sqrt(D_in)
+            b = torch.randn(D_out) / math.sqrt(D_out)
+        # Step 4: Register
+            self.register_parameter(f"{i}_weight", nn.Parameter(W))
+            self.register_parameter(f"{i}_bias", nn.Parameter(b))
 
     def num_layers(self):
         """Number of layers (excluding input layer)"""
         return len(self.sizes) - 1
 
     def forward(self, x):
-        pass
         # TODO: YOUR CODE HERE
+        # Step 1: Forward pass through each layer
+        for i in range(self.num_layers()):
+        # Step 2: Fetch the parameters by using getattr
+            W = self.get_parameter(f"{i}_weight")
+            b = self.get_parameter(f"{i}_bias")
+        # Step 3: Compute the linear transformation 
+            #x = W.t() @ x + b
+            # Updated to support both 1D vectors and 2D matrices (batches)
+            x = x @ W +b
+        # Step 4: Apply the activation function (if no activation function, the math will be collapsed -> stacked multiple linear transformations = one big linear transformation= logistic regression)
+            if i < self.num_layers() - 1:
+                x = self.phi(x)
+        # Step 5: Return the output
+        return x
 
 
 # %% [markdown]
