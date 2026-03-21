@@ -122,7 +122,7 @@ class MLP(nn.Module):
 
             # The output of the layer is the linear transformation of the input x using the weight matrix of the layer with a linear activation function, but only if the current layer is not the output layer.
             # To support both single input vectors and batches of input vectors, we are simply swapping x and W so the inner dimensions match during this matrix multiplication without the need of using a for loop.
-            # x = x @ W + b <- old method 
+            # x = W.T @ x + b <- old method 
             x = x @ W + b
             if i < self.num_layers() - 1:
                 x = self.phi(x)
