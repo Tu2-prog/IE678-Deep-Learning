@@ -15,6 +15,12 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # DL26, Assignment 1
+# **Anh Tu Duong Nguyen** (anguyea, 2115931)
+#
+# **Anh-Nhat Nguyen** (anhnnguy, 2034311)
+
 # %%
 import matplotlib.pyplot as plt
 import torch
