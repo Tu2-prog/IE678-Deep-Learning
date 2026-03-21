@@ -15,6 +15,12 @@
 # ---
 
 # %% [markdown]
+# # DL26, Assignment 1
+# **Anh Tu Duong Nguyen** (anguyea, 2115931)
+#
+# **Anh-Nhat Nguyen** (anhnnguy, 2034311)
+
+# %% [markdown]
 # # Task 1: Implement an MLP
 # ## 1a Logistic Regression
 #
