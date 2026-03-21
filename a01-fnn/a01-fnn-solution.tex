@@ -113,7 +113,7 @@ Anh-Nhat Nguyen (anhnnguy, 2034311)}
   \vspace{0.3em}
   \textbf{(i)} As $h$ increases, the model transitions through three phases. \emph{Underfitting} ($h{=}1,2$): the network lacks capacity to capture the wave pattern. \emph{Optimal} ($h{=}3$): both MSEs reach low values (0.0073 and 0.0104), indicating the model captures the underlying function without memorizing noise. \emph{Overfitting} ($h{\geq}10$): training MSE continues to decrease, but test MSE diverges sharply (from 0.0160 at $h{=}10$ to 6.3365 at $h{=}100$) as the network memorizes noise.
 
-  \textbf{(ii)} Our conjectures from (a) correctly predicted that $h{=}1$ and $h{=}2$ underfit and $h{=}3$ provides sufficient capacity. We did not anticipate the overfitting at $h{\geq}50$, where the model produces chaotic oscillations between training points.
+  \textbf{(ii)} Our conjectures from (a) correctly predicted that $h{=}1$ and $h{=}2$ underfit and $h{=}3$ provides sufficient capacity. We initially assumed that adding more neurons would monotonically improve the fit. Instead, beyond $h{=}3$ the model overfits: it memorizes training noise and produces chaotic oscillations on unseen data.
 \end{answer}
 
 \section*{Task 2d)}
