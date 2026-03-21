@@ -156,7 +156,7 @@ Anh-Nhat Nguyen (anhnnguy, 2034311)}
   There are 6 quantities computed using our parameters and inputs and targets in this forward pass.
   \begin{itemize}
     \item $z_{1} = W_{1}x$
-    \item $z_{2} = W_{2} + b_{1}$
+    \item $z_{2} = z_{1} + b_{1}$
     \item $z_{3} = \sigma(z_{2})$ where $\sigma(x) = \frac{1}{1 + e^{-x}}$
     \item $z_{4} = W_{2}z_{3}$
     \item $\hat{y} = z_{4} + b_{2}$
@@ -167,7 +167,7 @@ Anh-Nhat Nguyen (anhnnguy, 2034311)}
 \section*{Task 3b)}
 \begin{answer}[19cm]
   % YOUR ANSWER HERE
-  There are in total 6 gradients to compute in this backward pass. The gradients are computed using backpropagation which is defined as follows:
+  The gradients are computed using backpropagation which is defined as follows:
 
   For a given operator $f: \mathbb{R}^I \to \mathbb{R}^O$, the gradient going outside of the operator back to the input is:
   \begin{center}
