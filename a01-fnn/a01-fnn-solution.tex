@@ -54,7 +54,11 @@
 
 \title{DL26, Assignment 1}
 \author{Anh Tu Duong Nguyen (anguyea, 2115931)\\
+<<<<<<< HEAD
 Anh-Nhat Nguyen (anhnnguy, 2034311)}
+=======
+\todo{Student 2 name (login, matriculation number)}}
+>>>>>>> origin/tu
 \date{\today}
 
 \maketitle
@@ -153,11 +157,54 @@ Anh-Nhat Nguyen (anhnnguy, 2034311)}
 \section*{Task 3a)}
 \begin{answer}
   % YOUR ANSWER HERE
+  There are 6 quantities computed using our parameters and inputs and targets in this forward pass.
+  \begin{itemize}
+    \item $z_{1} = W_{1}x$
+    \item $z_{2} = W_{2} + b_{1}$
+    \item $z_{3} = \sigma(z_{2})$ where $\sigma(x) = \frac{1}{1 + e^{-x}}$
+    \item $z_{4} = W_{2}z_{3}$
+    \item $\hat{y} = z_{4} + b_{2}$
+    \item $l = (y- \hat{y})^{2}$
+  \end{itemize}
 \end{answer}
 
 \section*{Task 3b)}
 \begin{answer}[19cm]
   % YOUR ANSWER HERE
+  There are in total 6 gradients to compute in this backward pass. The gradients are computed using backpropagation which is defined as follows:
+
+  For a given operator $f: \mathbb{R}^I \to \mathbb{R}^O$, the gradient going outside of the operator back to the input is:
+  \begin{center}
+    $\delta_{in} = J_{f}^T \delta_{out}$ where $J_{f}$ is the Jacobian of $f$.
+  \end{center}
+  In the forward pass of the compute graph, the following computations are performed:
+  \begin{itemize}
+    \item matmul
+    \item logistic activation is applied
+    \item add 
+  \end{itemize}
+  Even though the compute graph figure shows that we have linear layers. The inputs to this linear layer are a matrix and a vector. According to the lecture, this equals
+  matmul.
+  The resulting gradient rules are for these operations:
+  \begin{itemize}
+    \item $\delta_{out}v^T$ or $A^T\delta_{out}$ for the matmul operation
+    \item $\sigma(x)(1-\sigma(x))\delta_{out}$ for the logistic activation
+    \item $\delta_{out}$ for all inputs in the add operation
+  \end{itemize}
+  Applying these rules of the compute graph, we get the following gradients:
+  \begin{itemize}
+    \item $\delta_{l} = 1$
+    \item $\delta_{\hat{y}} = -2(y-\hat{y})\delta_{l}$
+    \item $\delta_{y} = 2(y-\hat{y})\delta_{l}$
+    \item $\delta_{z_{4}} = \delta_{\hat{y}}$
+    \item $\delta_{b_{2}} = \delta_{\hat{y}}$
+    \item $\delta_{W_{2}} = \delta_{z_{4}}z_{3}^T$
+    \item $\delta_{z_{3}} = W_{2}^T\delta_{z_{4}}$
+    \item $\delta_{z_{2}} = \sigma(z_{2})(1-\sigma(z_{2}))\delta_{z_{3}}$
+    \item $\delta_{b_{1}} = \delta_{z_{2}}$
+    \item $\delta_{W_{1}} = \delta_{z_{2}}x^T$
+    \item $\delta_{x} = W_{1}^T\delta_{z_{1}}$
+  \end{itemize}
 \end{answer}
 
 \newpage

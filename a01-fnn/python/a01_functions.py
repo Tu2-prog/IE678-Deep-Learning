@@ -1,13 +1,14 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -25,6 +26,15 @@ import torch.nn.functional as F
 
 # %%
 # `nn.Module` is the superclass of all PyTorch models.
+# 1.a)
+# (i) The weights and biases are initialized with standard tensors of dimensions (D, C) and (C) respectively.
+# The tensors are initialized with random values and then scaled by the square root of D.
+# The parameters are formally stored using the self.register_parameter method. By doing so the parameters are assigned identifiers that
+# allows PyTorch to keep track of them to optimize them during training.
+
+# (ii) The forward pass is a simple linear transformation of the input x using the weight matrix W.
+# This linear transformation gets the softmax function applied to it to get the log probabilities of the classes as outputs.
+# The softmax function works as an activation function that converts the logits to probabilities which is considered standard practice.
 class LogisticRegression(nn.Module):
     """A logistic regression model.
 
@@ -87,15 +97,9 @@ class MLP(nn.Module):
         # Initialize and register the parameters. Follow the naming scheme used for
         # logistic regression above, i.e., the layer-i weights should be named "i_weight" and
         # "i_bias".
-        #
-        # TODO: YOUR CODE HERE
         for i in range(len(sizes) - 1):
-        # Step 1: Extract dimensions from sizes
-            D_in, D_out = sizes[i], sizes[i + 1]
-        # Step 2: Intialize Tensors and Scale for weights and biases
-            W = torch.randn(D_in, D_out) / math.sqrt(D_in)
-            b = torch.randn(D_out) / math.sqrt(D_out)
-        # Step 4: Register
+            W = torch.randn(sizes[i], sizes[i + 1]) / math.sqrt(sizes[i])
+            b = torch.randn(sizes[i + 1]) / math.sqrt(sizes[i + 1])
             self.register_parameter(f"{i}_weight", nn.Parameter(W))
             self.register_parameter(f"{i}_bias", nn.Parameter(b))
 
@@ -104,20 +108,19 @@ class MLP(nn.Module):
         return len(self.sizes) - 1
 
     def forward(self, x):
-        # TODO: YOUR CODE HERE
-        # Step 1: Forward pass through each layer
+        # Computation is down iteratively for every layer. IMPORTANT: We are not iterating over a tensor here, but just over the number of layers.
         for i in range(self.num_layers()):
-        # Step 2: Fetch the parameters by using getattr
+            # The parameters are registerd with unique identifiers. We can access them to get the parameters of our corresponding layer.
             W = self.get_parameter(f"{i}_weight")
             b = self.get_parameter(f"{i}_bias")
-        # Step 3: Compute the linear transformation 
-            #x = W.t() @ x + b
-            # Updated to support both 1D vectors and 2D matrices (batches)
-            x = x @ W +b
-        # Step 4: Apply the activation function (if no activation function, the math will be collapsed -> stacked multiple linear transformations = one big linear transformation= logistic regression)
+
+            # The output of the layer is the linear transformation of the input x using the weight matrix of the layer with a linear activation function, but only if the current layer is not the output layer.
+            # To support both single input vectors and batches of input vectors, we are simply swapping x and W so the inner dimensions match during this matrix multiplication without the need of using a for loop.
+            # x = x @ W + b <- old method 
+            x = x @ W + b
             if i < self.num_layers() - 1:
                 x = self.phi(x)
-        # Step 5: Return the output
+        # If input was a vector, remove batch dimension from output
         return x
 
 

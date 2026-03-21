@@ -1,14 +1,16 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
@@ -112,7 +114,7 @@ models = {}
 train_mses = {}
 test_mses = {}
 
-MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+MODEL_DIR = os.path.join(os.getcwd(), "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 for h in hidden_sizes_list:

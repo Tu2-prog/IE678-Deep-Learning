@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(brew install:*)",
+      "Bash(pdftotext /tmp/a01_2_tu.pdf /tmp/a01_2_tu.txt)",
+      "Bash(python3:*)",
+      "Bash(pdflatex -interaction=nonstopmode a01-fnn-solution.tex)",
+      "Bash(open:*)",
+      "Bash(gh pr:*)"
+    ]
+  }
+}
