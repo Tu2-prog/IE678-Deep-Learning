@@ -1,17 +1,23 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: py:percent,ipynb
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
+
+# %% [markdown]
+# Anh Tu Duong Nguyen (anguyea, 115931)
+#
+# Anh-Nhat Nguyen (anhnnguy, 2034311)
 
 # %%
 import torch
@@ -34,14 +40,18 @@ from a02_functions import ClimbCNN
 
 # %%
 # TODO: your code here
+model = ClimbCNN(in_channels=1, out_channels=1, kernel_size=2)
+model.state_dict()
 
 # %% [markdown]
 # You can access the model parameters via `<model>.<param-name>`. Set all parameters to
 # the values required to solve task a).
 
 # %%
-with torch.no_grad():  # needed so that you can assign values to the model parameters
-    # TODO: your code here
+with torch.no_grad():
+        # TODO: your code here
+    model.conv.weight.copy_(torch.tensor([[[-1.0, 1.0]]]))  # difference kernel to compute increment as we are sliding from left to right -> left value needs to be subtracted from the right value
+    model.conv.bias.copy_(torch.tensor([0.0]))
 
 # %% [markdown]
 # Simple test case that can be verified by hand.
@@ -69,6 +79,14 @@ print(y)  # should give: tensor([503.4000])
 
 # %%
 # TODO: your code here
+model2 = ClimbCNN(in_channels=1, out_channels=2, kernel_size=2)
+
+with torch.no_grad():
+    model2.conv.weight.copy_(torch.tensor([
+        [[-1.0,  1.0]],  # ascent kernel matrix the same as before
+        [[ 1.0, -1.0]],  # descent kernel matrix is the flipped kernel as we are computing the opposite of the ascent
+    ]))
+    model2.conv.bias.copy_(torch.tensor([0.0, 0.0]))  # one bias per output channel
 
 # %%
 x = torch.Tensor([0.0, 5.0, 11.0, 7.0, 15.0, 3.0]).view(1, -1)

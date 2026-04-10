@@ -1,11 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -34,9 +35,14 @@ class ClimbCNN(nn.Module):
         super().__init__()
         # TODO: your code here
         # Convolution layer must be stored as `self.conv`.
+        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size)
+        self.activation = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: your code here
+        x = self.conv(x)
+        x = self.activation(x)
+        x = x.sum(x.dim() - 1)  # sum over the sequence dimension
         return x
 
 
@@ -78,6 +84,9 @@ class SimpleCNN(nn.Module):
         # use these attributes later for visualization (Task 3)
         self.store_embeddings = False
         self.embeddings: list[torch.Tensor] = []
+        self.conv1 = nn.Conv1d(1, channels, kernel_size, stride, padding)
+        self.conv2 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
+        self.lin1 = nn.Linear(linear_in, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Add channel dimension (of size 1)
@@ -89,10 +98,16 @@ class SimpleCNN(nn.Module):
             x = x.unsqueeze(1)
 
         # TODO: your code here
+        x = self.conv1(x).relu()
+        x = self.conv2(x).relu()
+        x = x.max(dim=-1).values
 
         # For task 3: store information about the forward pass in self.embeddings.
         # TODO: your code here
+        if self.store_embeddings:
+            self.embeddings.append(x.detach())
 
+        y = self.lin1(x)
         return y
 
 
@@ -114,8 +129,8 @@ def train_model(
 
     # Create PyTorch dataset and data loader.
     # TODO: your code here
-    train_dataset = ...
-    train_loader = ...
+    train_dataset = TensorDataset(x_train, y_train)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     # Set up logging.
     results = {
@@ -133,8 +148,8 @@ def train_model(
 
     # Define loss function and optimizer.
     # TODO: your code here
-    loss_fn = ...  # (use cross-entropy loss)
-    optimizer = ...  # (use, e.g., Adam)
+    loss_fn = nn.CrossEntropyLoss()  # (use cross-entropy loss)
+    optimizer = optim.Adam(model.parameters(), lr=lr)  # (use, e.g., Adam)
 
     # Training loop.
     for epoch in range(epochs):
@@ -144,14 +159,17 @@ def train_model(
             # Forward pass: Compute the model's output and the loss. Store the
             # computed loss in the results dict (using loss.item()).
             # TODO: your code here
-            output = ...
-            loss = ...
+            output = model(x)
+            loss = loss_fn(output, y)
             results["train_losses"].append(loss.item())
 
             # Backward pass: Compute the gradients of the loss with respect to all
             # the learnable parameters. Update the model's parameters using gradient
             # descent. Zero out the gradients for the next iteration.
             # TODO: your code here
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
 
         # Logging (no need to modify this)
         if epoch % eval_every == 0:
