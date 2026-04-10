@@ -1,17 +1,23 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: deep-learning
 #     language: python
 #     name: python3
 # ---
+
+# %% [markdown]
+# Anh Tu Duong Nguyen (anguyea, 115931)
+#
+# Anh-Nhat Nguyen (anhnnguy, 2034311)
 
 # %%
 import numpy as np
@@ -69,15 +75,30 @@ with torch.no_grad():
 train_embeddings = [e.cpu().numpy() for e in cnn.embeddings]
 
 # TODO: your code here
+cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
 
 
 # %%
+# produce tsne plot for the training data
+print(len(train_embeddings))
+x_tsne_train = tsne(train_embeddings[0], perplexity=perplexity)
+nextplot()
+tsne_plot(x_tsne_train, y)
 
 # %% [markdown]
 # ### t-SNE for embeddings of test data
 
 # %%
 # TODO: your code here
+cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
+with torch.no_grad():
+    cnn(torch.Tensor(x_test).to(DEVICE))
+test_embeddings = [e.cpu().numpy() for e in cnn.embeddings]
+
+print(len(test_embeddings))
+x_tsne_test = tsne(test_embeddings[0], perplexity=perplexity)
+nextplot()
+tsne_plot(x_tsne_test, y_test)
 
 
 # %% [markdown]
@@ -121,3 +142,4 @@ nextplot()
 examples_heatmap([cls_examples] + cls_train_embeddings[:-1])
 
 # TODO: your code here
+cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
