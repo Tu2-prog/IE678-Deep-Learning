@@ -89,6 +89,7 @@ class SimpleCNN(nn.Module):
         self.conv3 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
         self.conv4 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
         self.lin1 = nn.Linear(linear_in, 10)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Add channel dimension (of size 1)
@@ -100,6 +101,8 @@ class SimpleCNN(nn.Module):
             x = x.unsqueeze(1)
 
         # TODO: your code here
+        if len(x.shape) == 2:
+            x = x.unsqueeze(1)
         x = self.conv1(x).relu()
         x = self.conv2(x).relu()
         emb_block1 = x.detach()
@@ -107,7 +110,8 @@ class SimpleCNN(nn.Module):
         x = self.conv3(x).relu()
         x = self.conv4(x).relu()
         emb_block2 = x.detach()
-        x = x.max(dim=-1).values
+        x = self.pool(x)
+        x = x.flatten(start_dim=1)  # flatten all dimensions except batch dimension
 
         # For task 3: store information about the forward pass in self.embeddings.
         # TODO: your code here
