@@ -86,6 +86,8 @@ class SimpleCNN(nn.Module):
         self.embeddings: list[torch.Tensor] = []
         self.conv1 = nn.Conv1d(1, channels, kernel_size, stride, padding)
         self.conv2 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
+        self.conv3 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
+        self.conv4 = nn.Conv1d(channels, channels, kernel_size, stride, padding)
         self.lin1 = nn.Linear(linear_in, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -100,6 +102,8 @@ class SimpleCNN(nn.Module):
         # TODO: your code here
         x = self.conv1(x).relu()
         x = self.conv2(x).relu()
+        x = self.conv3(x).relu()
+        x = self.conv4(x).relu()
         x = x.max(dim=-1).values
 
         # For task 3: store information about the forward pass in self.embeddings.
