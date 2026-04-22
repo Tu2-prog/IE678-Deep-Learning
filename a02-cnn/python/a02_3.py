@@ -14,11 +14,6 @@
 #     name: python3
 # ---
 
-# %% [markdown]
-# Anh Tu Duong Nguyen (anguyea, 115931)
-#
-# Anh-Nhat Nguyen (anhnnguy, 2034311)
-
 # %%
 import numpy as np
 import torch
@@ -75,30 +70,30 @@ with torch.no_grad():
 train_embeddings = [e.cpu().numpy() for e in cnn.embeddings]
 
 # TODO: your code here
-cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
+# Task 3b+d: t-SNE on training embeddings after last conv-block (i.e., before the linear prediction head)
+emb_train = train_embeddings[-1].reshape(len(train_embeddings[-1]), -1)
+train_tsne = tsne(emb_train, perplexity=perplexity)
+nextplot()
+tsne_plot(train_tsne, y)
 
 
 # %%
-# produce tsne plot for the training data
-print(len(train_embeddings))
-x_tsne_train = tsne(train_embeddings[0], perplexity=perplexity)
-nextplot()
-tsne_plot(x_tsne_train, y)
 
 # %% [markdown]
 # ### t-SNE for embeddings of test data
 
 # %%
 # TODO: your code here
-cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
+# Task 3b+d: extract test embeddings and plot t-SNE
+cnn.store_embeddings = True
 with torch.no_grad():
     cnn(torch.Tensor(x_test).to(DEVICE))
 test_embeddings = [e.cpu().numpy() for e in cnn.embeddings]
 
-print(len(test_embeddings))
-x_tsne_test = tsne(test_embeddings[0], perplexity=perplexity)
+emb_test = test_embeddings[-1].reshape(len(test_embeddings[-1]), -1)
+test_tsne = tsne(emb_test, perplexity=perplexity)
 nextplot()
-tsne_plot(x_tsne_test, y_test)
+tsne_plot(test_tsne, y_test)
 
 
 # %% [markdown]
@@ -142,4 +137,18 @@ nextplot()
 examples_heatmap([cls_examples] + cls_train_embeddings[:-1])
 
 # TODO: your code here
-cnn.embeddings = []  # clear the stored embeddings so that we can store the test embeddings
+# Task 3e: t-SNE using conv-block 1 embeddings (earlier layer) for comparison
+emb_train_block1 = train_embeddings[0].reshape(len(train_embeddings[0]), -1)
+train_tsne_block1 = tsne(emb_train_block1, perplexity=perplexity)
+nextplot()
+tsne_plot(train_tsne_block1, y)
+
+# %%
+# Task 3f: heatmap for a different class to compare feature activations
+for cls in [1, 5]:
+    cls_examples_other = torch.Tensor(x[y == cls])
+    cls_embeddings_other = [e[y == cls] for e in train_embeddings]
+    nextplot()
+    examples_heatmap([cls_examples_other] + cls_embeddings_other[:-1])
+
+# %%

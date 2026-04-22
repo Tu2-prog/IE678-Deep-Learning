@@ -106,7 +106,8 @@ class SimpleCNN(nn.Module):
         x = self.conv1(x).relu()
         x = self.conv2(x).relu()
         emb_block1 = x.detach()
-
+        
+        x = self.pool(x)
         x = self.conv3(x).relu()
         x = self.conv4(x).relu()
         emb_block2 = x.detach()
