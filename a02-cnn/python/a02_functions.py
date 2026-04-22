@@ -34,9 +34,22 @@ class ClimbCNN(nn.Module):
         super().__init__()
         # TODO: your code here
         # Convolution layer must be stored as `self.conv`.
+        self.conv  = nn.Conv1d(in_channels = in_channels, out_channels = out_channels, kernel_size = kernel_size)
+        self.act = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TODO: your code here
+        # x have shap [batch, length], but nn.Conv1d expects [batch, in_channels, length], so:
+        #Input: [B, L] altitudes. Output: [B] (or [B, C] in 1b) total per channel.
+        x = x.unsqueeze(1)  # [B, L] -> [B, 1, L] for Conv1d
+        # Apply to output shape [B, out_channels, L − kernel_size + 1]
+        x = self.conv(x) 
+        # Apply self.act
+        x = self.act(x) 
+        # Readout: collapse the spatial dim to get single scalar, use dim =2 for climb up meters
+        x = x.sum(dim = 2)
+        # drops the channel axis only if it has size 1 
+        x.squeeze(1) 
         return x
 
 
@@ -74,6 +87,16 @@ class SimpleCNN(nn.Module):
         super().__init__()
         # TODO: your code here
         # Name each convolutional layer `self.conv1`, `self.conv2` etc.
+        # conv-block-1
+        self.conv1 = nn.Conv1d(in_channels = 1, out_channels = channels, kernel_size = kernel_size, padding = padding, stride = stride)
+        self.conv2 = nn.Conv1d(in_channels = channels, out_channels = channels, kernel_size = kernel_size, padding = padding, stride = stride)
+        # conv-block-2
+        self.conv3 = nn.Conv1d(in_channels = channels, out_channels = channels, kernel_size = kernel_size, padding = padding, stride = stride)
+        self.conv4 = nn.Conv1d(in_channels = channels, out_channels = channels, kernel_size = kernel_size, padding = padding, stride = stride)
+
+        # Linear layer
+        self.fc = nn.Linear(in_features = linear_in, out_features = 10)
+        self.pool = nn.MaxPool1d(kernel_size = 2, stride = 2)
 
         # use these attributes later for visualization (Task 3)
         self.store_embeddings = False
@@ -89,9 +112,30 @@ class SimpleCNN(nn.Module):
             x = x.unsqueeze(1)
 
         # TODO: your code here
+        if len(x.shape) == 2:
+            x = x.unsqueeze(1)  # [1, N] -> [1, 1, N] for unbatched input
+        # conv-block 1
+        x = self.conv1(x).relu()
+        x = self.conv2(x).relu()
+        x = self.pool(x)
+        emb_block1 = x.detach()  # Task 3: save output after conv-block 1
+
+        # conv-block 2
+        x = self.conv3(x).relu()
+        x = self.conv4(x).relu()
+        x = self.pool(x)
+        emb_block2 = x.detach()  # Task 3: save output after conv-block 2
+
+        # flatten and classify
+        x = x.flatten(start_dim=1)
+        x = self.fc(x)
+
+        y = x
 
         # For task 3: store information about the forward pass in self.embeddings.
         # TODO: your code here
+        if self.store_embeddings:
+            self.embeddings = [emb_block1, emb_block2]
 
         return y
 
@@ -114,8 +158,8 @@ def train_model(
 
     # Create PyTorch dataset and data loader.
     # TODO: your code here
-    train_dataset = ...
-    train_loader = ...
+    train_dataset = TensorDataset(x_train, y_train)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     # Set up logging.
     results = {
@@ -133,8 +177,8 @@ def train_model(
 
     # Define loss function and optimizer.
     # TODO: your code here
-    loss_fn = ...  # (use cross-entropy loss)
-    optimizer = ...  # (use, e.g., Adam)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
 
     # Training loop.
     for epoch in range(epochs):
@@ -144,14 +188,17 @@ def train_model(
             # Forward pass: Compute the model's output and the loss. Store the
             # computed loss in the results dict (using loss.item()).
             # TODO: your code here
-            output = ...
-            loss = ...
+            output = model(x)
+            loss = loss_fn(output, y)
             results["train_losses"].append(loss.item())
 
             # Backward pass: Compute the gradients of the loss with respect to all
             # the learnable parameters. Update the model's parameters using gradient
             # descent. Zero out the gradients for the next iteration.
             # TODO: your code here
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
 
         # Logging (no need to modify this)
         if epoch % eval_every == 0:

@@ -119,3 +119,16 @@ results = train_model(shuffled_dataset, cnn)
 torch.manual_seed(0)
 fnn = SimpleMLP()
 results = train_model(shuffled_dataset, fnn)
+
+
+# # %%
+# # Self verify code 2c - can delete later
+# from a02_functions import SimpleCNN
+# from a02_helper import count_model_params
+
+# model = SimpleCNN(channels=5, kernel_size=3, stride=2, padding=1, linear_in=5)
+# print(count_model_params(model))  # should print 320
+
+# %%
+
+
