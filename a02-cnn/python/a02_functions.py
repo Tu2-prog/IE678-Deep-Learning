@@ -102,14 +102,17 @@ class SimpleCNN(nn.Module):
         # TODO: your code here
         x = self.conv1(x).relu()
         x = self.conv2(x).relu()
+        emb_block1 = x.detach()
+
         x = self.conv3(x).relu()
         x = self.conv4(x).relu()
+        emb_block2 = x.detach()
         x = x.max(dim=-1).values
 
         # For task 3: store information about the forward pass in self.embeddings.
         # TODO: your code here
         if self.store_embeddings:
-            self.embeddings.append(x.detach())
+            self.embeddings = [emb_block1, emb_block2]
 
         y = self.lin1(x)
         return y
