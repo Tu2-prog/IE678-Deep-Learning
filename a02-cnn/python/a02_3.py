@@ -14,6 +14,11 @@
 #     name: python3
 # ---
 
+# %%[markdown]
+#Anh Tu Duong Nguyen (anguyea, 115931)
+#
+#Anh-Nhat Nguyen (anhnnguy, 2034311)
+
 # %%
 import numpy as np
 import torch

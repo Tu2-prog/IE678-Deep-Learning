@@ -1,31 +1,28 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
-#     custom_cell_magics: kql
 #     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.16.7
 #   kernelspec:
-#     display_name: deep-learning
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
 # %% [markdown]
-# Anh Tu Duong Nguyen (anguyea, 115931)
+#Anh Tu Duong Nguyen (anguyea, 115931)
 #
-# Anh-Nhat Nguyen (anhnnguy, 2034311)
+#Anh-Nhat Nguyen (anhnnguy, 2034311)
 
 # %%
 import pandas as pd
-import numpy as np
 import torch
-import matplotlib.pyplot as plt
 from itertools import product
+from IPython.display import display
 
 from a02_functions import SimpleCNN, train_model
 from a02_helper import get_raw_data, count_model_params
@@ -37,141 +34,152 @@ from a02_helper import get_raw_data, count_model_params
 # # Task 4: Exploration
 
 # %%
+# TODO: your code here
+import matplotlib.pyplot as plt
+from torch import nn
+
 data = get_raw_data()
 
-def run_sweep(data, model_fn, configs: list[dict], sweep_name: str = "") -> dict[str, dict]:
-    all_results = {}
-    for cfg in configs:
-        label = ", ".join(f"{k}={v}" for k, v in cfg.items())
-        print(f"\n--- [{sweep_name}] Config: {label} ---")
-        model = model_fn()
-        results = train_model(data, model, **cfg)
-        results["num_params"] = count_model_params(model)
-        all_results[label] = results
-    return all_results
+# %% [markdown]
+# ## Helpers
+
+# %%
+def compute_linear_in(channels=25, kernel_size=3, stride=2, padding=1, input_len=40):
+    """Use a dummy forward pass through the conv layers to find the flattened size.
+    More robust than manual math — adapts automatically if the architecture changes."""
+    conv_layers = nn.Sequential(
+        nn.Conv1d(1, channels, kernel_size, stride=stride, padding=padding),
+        nn.ReLU(),
+        nn.Conv1d(channels, channels, kernel_size, stride=stride, padding=padding),
+        nn.ReLU(),
+        nn.MaxPool1d(2, 2),
+        nn.Conv1d(channels, channels, kernel_size, stride=stride, padding=padding),
+        nn.ReLU(),
+        nn.Conv1d(channels, channels, kernel_size, stride=stride, padding=padding),
+        nn.ReLU(),
+        nn.MaxPool1d(2, 2),
+    )
+    with torch.no_grad():
+        dummy = torch.zeros(1, 1, input_len)
+        out = conv_layers(dummy)
+    return out.flatten(start_dim=1).shape[1]
 
 
-def plot_sweep(all_results: dict, metric: str = "val_acc", eval_every: int = 10, title_prefix: str = ""):
-    EPOCH_METRICS = {"train_acc", "val_acc", "train_losses", "val_losses"}
-    if metric not in EPOCH_METRICS:
-        raise ValueError(f"'{metric}' is a scalar. Use one of: {sorted(EPOCH_METRICS)}")
-
-    loss_key = "val_losses" if "val" in metric else "train_losses"
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    for label, res in all_results.items():
-        epochs = [i * eval_every for i in range(len(res[metric]))]
-        axes[0].plot(epochs, res[loss_key], label=label)
-        axes[1].plot(epochs, res[metric], label=label)
-
-    axes[0].set(title=f"{title_prefix} Loss", xlabel="Epoch", ylabel="Loss")
-    axes[1].set(title=f"{title_prefix} Accuracy", xlabel="Epoch", ylabel="Accuracy (%)")
-    for ax in axes:
-        ax.legend(fontsize=8)
-        ax.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_final_comparison(all_results: dict, metric: str = "test_acc", title_prefix: str = ""):
-    labels = list(all_results.keys())
-    values = [res[metric][0] for res in all_results.values()]
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar(labels, values)
-    ax.set(title=f"{title_prefix} — Final {metric} by config", ylabel=metric)
-    ax.tick_params(axis="x", rotation=30)
-    plt.tight_layout()
-    plt.show()
-
-
-def build_summary_table(sweep_results: dict[str, dict]) -> pd.DataFrame:
-    """
-    sweep_results: { sweep_name: { config_label: result_dict } }
-    Returns a DataFrame with one row per config, columns:
-      sweep | config | test_acc | val_acc (final) | train_acc (final) | val_loss (final) | train_loss (final)
-    """
-    rows = []
-    for sweep_name, all_results in sweep_results.items():
-        for label, res in all_results.items():
-            rows.append({
-                "sweep":            sweep_name,
-                "config":           label,
-                "test_acc":         res["test_acc"][0],
-                "val_acc_final":    res["val_acc"][-1],
-                "train_acc_final":  res["train_acc"][-1],
-                "val_loss_final":   res["val_losses"][-1],
-                "train_loss_final": res["train_losses"][-1],
-                "num_params":      res["num_params"],
-            })
-    df = pd.DataFrame(rows)
-    df = df.sort_values(["sweep", "test_acc"], ascending=[True, False]).reset_index(drop=True)
-    return df
-
+def run_experiment(label, subtask, model_kw, train_kw, data):
+    """Train SimpleCNN with given hyperparameters and return metrics."""
+    defaults = dict(channels=25, kernel_size=3, stride=2, padding=1)
+    hp = {**defaults, **model_kw}
+    hp["linear_in"] = compute_linear_in(
+        channels=hp["channels"], kernel_size=hp["kernel_size"],
+        stride=hp["stride"], padding=hp["padding"],
+    )
+    # Seed before both model init AND DataLoader creation for fully reproducible runs
+    torch.manual_seed(0)
+    model = SimpleCNN(**hp)
+    torch.manual_seed(0)  # re-seed so DataLoader shuffle is identical across experiments
+    results = train_model(data, model, **train_kw)
+    return {
+        "subtask": subtask,
+        "config":    label,
+        "n_params":  count_model_params(model),
+        "test_acc":  results["test_acc"][-1],
+        "val_acc":   results["val_acc"][-1],
+        "train_acc": results["train_acc"][-1],
+    }
 
 # %% [markdown]
-# ## Run all sweeps
+# ## Experiment Configurations
+#
+# Each tuple: (label, subtask, model_kwargs, train_kwargs).
+# `✓` marks the default baseline value for easy reference.
 
 # %%
-sweep_results = {}
+configs = [
+    # ── 4a: learning rate ────────────────────────────────────────────────────
+    ("lr=1e-3",       "4a", {},                              {"lr": 1e-3, "epochs": 200}),
+    ("lr=1e-2 ✓",     "4a", {},                              {"lr": 1e-2}),
+    ("lr=1e-1",       "4a", {},                              {"lr": 1e-1}),
+    # ── 4a: batch size ───────────────────────────────────────────────────────
+    ("bs=16",         "4a", {},                              {"batch_size": 16}),
+    ("bs=64 ✓",       "4a", {},                              {"batch_size": 64}),
+    ("bs=256",        "4a", {},                              {"batch_size": 256}),
+    # ── 4b: kernel size (padding adjusted to keep spatial sizes reasonable) ──
+    ("k=1,p=0",       "4b", {"kernel_size": 1, "padding": 0}, {}),
+    ("k=3,p=1 ✓",     "4b", {},                              {}),
+    ("k=5,p=2",       "4b", {"kernel_size": 5, "padding": 2}, {}),
+    # ── 4c: number of channels ───────────────────────────────────────────────
+    ("ch=5",          "4c", {"channels": 5},                 {}),
+    ("ch=25 ✓",       "4c", {},                              {}),
+    ("ch=50",         "4c", {"channels": 50},                {}),
+    # ── 4d: stride ───────────────────────────────────────────────────────────
+    ("stride=1",      "4d", {"stride": 1},                   {}),
+    ("stride=2 ✓",    "4d", {},                              {}),
+]
 
-# --- Learning rate sweep ---
-lrs = np.logspace(-5, 0, 10)
-configs = [{"lr": float(lr)} for lr in lrs]
-sweep_results["lr"] = run_sweep(data, lambda: SimpleCNN(), configs, sweep_name="lr")
-plot_sweep(sweep_results["lr"], metric="val_acc", title_prefix="LR Sweep")
-plot_final_comparison(sweep_results["lr"], metric="test_acc", title_prefix="LR Sweep")
-
-# --- Batch size sweep ---
-batch_sizes = [2**i for i in range(1, 8)]
-configs = [{"batch_size": int(bs)} for bs in batch_sizes]
-sweep_results["batch_size"] = run_sweep(data, lambda: SimpleCNN(), configs, sweep_name="batch_size")
-plot_sweep(sweep_results["batch_size"], metric="val_acc", title_prefix="Batch Size Sweep")
-plot_final_comparison(sweep_results["batch_size"], metric="test_acc", title_prefix="Batch Size Sweep")
-
-# --- Epochs sweep ---
-epoch_list = [10, 20, 50, 100, 200, 500]
-configs = [{"epochs": int(e)} for e in epoch_list]
-sweep_results["epochs"] = run_sweep(data, lambda: SimpleCNN(), configs, sweep_name="epochs")
-plot_sweep(sweep_results["epochs"], metric="val_acc", title_prefix="Epochs Sweep")
-plot_final_comparison(sweep_results["epochs"], metric="test_acc", title_prefix="Epochs Sweep")
-
+# %% [markdown]
+# ## Run All Experiments
 
 # %%
-def run_sweep_class_hyperparameter(data, model_fn, configs: list[dict], sweep_name: str = "") -> dict[str, dict]:
-    all_results = {}
-    for cfg in configs:
-        label = ", ".join(f"{k}={v}" for k, v in cfg.items())
-        print(f"\n--- [{sweep_name}] Config: {label} ---")
-        model = model_fn(**cfg)          # pass config to constructor
-        results = train_model(data, model)  # no **cfg here
-        results["num_params"] = count_model_params(model)
-        all_results[label] = results
-    return all_results
-
-# --- Kernel Size sweep ---
-kernel_sizes = [1, 3, 5, 7]
-configs = [{"kernel_size": int(k)} for k in kernel_sizes]
-sweep_results["kernel_size"] = run_sweep_class_hyperparameter(data, SimpleCNN, configs, sweep_name="kernel_size")
-plot_sweep(sweep_results["kernel_size"], metric="val_acc", title_prefix="Kernel Size Sweep")
-plot_final_comparison(sweep_results["kernel_size"], metric="test_acc", title_prefix="Kernel Size Sweep")
-
-# -- No. Channels sweep ---
-channel_list = [i for i in range(5, 25, 5)]
-configs = [{"channels": int(c), "linear_in": int(c)} for c in channel_list]
-sweep_results["channels"]    = run_sweep_class_hyperparameter(data, SimpleCNN, configs, sweep_name="channels")
-plot_sweep(sweep_results["channels"], metric="val_acc", title_prefix="Channels Sweep")
-plot_final_comparison(sweep_results["channels"], metric="test_acc", title_prefix="Channels Sweep")
-
-# -- Stride sweep ---
-strides = [1, 2, 3, 5]
-configs = [{"stride": int(s)} for s in strides]
-sweep_results["stride"]      = run_sweep_class_hyperparameter(data, SimpleCNN, configs, sweep_name="stride")
-plot_sweep(sweep_results["stride"], metric="val_acc", title_prefix="Stride Sweep")
-plot_final_comparison(sweep_results["stride"], metric="test_acc", title_prefix="Stride Sweep")
+rows = []
+for label, subtask, model_kw, train_kw in configs:
+    print(f"\n{'─'*50}\n[{subtask}] {label}")
+    row = run_experiment(label, subtask, model_kw, train_kw, data)
+    rows.append(row)
+    print(f"  test_acc={row['test_acc']:.1f}%  val_acc={row['val_acc']:.1f}%  n_params={row['n_params']}")
 
 # %% [markdown]
 # ## Summary Table
 
 # %%
-summary_df = build_summary_table(sweep_results)
-summary_df
+df = pd.DataFrame(rows)
+display(df)
+
+# %% [markdown]
+# ## Visualizations
+
+# %%
+subtask_titles = {
+    "4a": "4a — Learning Rate & Batch Size",
+    "4b": "4b — Kernel Size",
+    "4c": "4c — Number of Channels",
+    "4d": "4d — Stride",
+}
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+axes = axes.flatten()
+
+for ax, (st, title) in zip(axes, subtask_titles.items()):
+    sub = df[df["subtask"] == st].reset_index(drop=True)
+    x = range(len(sub))
+    width = 0.25
+    ax.bar([i - width for i in x], sub["train_acc"], width=width, label="train_acc", alpha=0.8, color="steelblue")
+    ax.bar([i         for i in x], sub["val_acc"],   width=width, label="val_acc",   alpha=0.8, color="orange")
+    ax.bar([i + width for i in x], sub["test_acc"],  width=width, label="test_acc",  alpha=0.8, color="green")
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(sub["config"], rotation=20, ha="right", fontsize=8)
+    ax.set_ylabel("Accuracy (%)")
+    ax.set_ylim(0, 105)
+    ax.set_title(title)
+    ax.legend(fontsize=8)
+    ax.axhline(y=90, color="red", linestyle="--", linewidth=0.8, label="90% target")
+
+plt.suptitle("Task 4: Hyperparameter Exploration", fontsize=13, fontweight="bold")
+plt.tight_layout()
+plt.show()
+
+# %%
+# Parameter count comparison (relevant for 4b, 4c, 4d)
+fig, axes = plt.subplots(1, 3, figsize=(14, 4))
+
+for ax, st, title in zip(axes, ["4b", "4c", "4d"],
+                          ["4b — Kernel Size", "4c — Channels", "4d — Stride"]):
+    sub = df[df["subtask"] == st].reset_index(drop=True)
+    ax.bar(range(len(sub)), sub["n_params"], color="mediumpurple", alpha=0.8)
+    ax.set_xticks(range(len(sub)))
+    ax.set_xticklabels(sub["config"], rotation=15, ha="right", fontsize=8)
+    ax.set_ylabel("# Parameters")
+    ax.set_title(title)
+
+plt.suptitle("Parameter Count by Architectural Hyperparameter", fontsize=12, fontweight="bold")
+plt.tight_layout()
+plt.show()
