@@ -1,13 +1,14 @@
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.1
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: dl-2
 #     language: python
 #     name: python3
 # ---
@@ -61,6 +62,28 @@ _ = tsne_vocab(glove_embeddings, torch.arange(100), colors=[0] * 50 + [1] * 50)
 # %%
 # YOUR CODE HERE
 # Note: you can obtain the embeddings tensor using glove_embeddings.weight.data
+import torch.nn.functional as F
+
+# Get the actual first 100 words from vocab
+n = 100
+words_n = [vocab.lookup_token(i) for i in range(n)]
+indices_n = torch.arange(n, device=DEVICE)
+selected = glove_embeddings.weight[indices_n]
+
+# (i) t-SNE of first 100 words
+nextplot()
+_ = tsne_vocab(glove_embeddings, indices_n, vocab, colors=[0] * 50 + [1] * 50)
+
+# %%
+# (ii) Cosine similarity heatmap for first 100 words
+sim_matrix = F.cosine_similarity(selected.unsqueeze(1), selected.unsqueeze(0), dim=2)
+plt.figure(figsize=(20, 20))
+plt.imshow(sim_matrix.detach().cpu().numpy(), cmap="coolwarm", vmin=-1, vmax=1)
+plt.xticks(range(100), words_n, rotation=90, fontsize=6)
+plt.yticks(range(100), words_n, fontsize=6)
+plt.colorbar(label="Cosine Similarity")
+plt.title("Cosine Similarity Matrix of First N Vocab Words")
+plt.tight_layout()
 
 # %% [markdown]
 # ### Task 5c
@@ -80,6 +103,10 @@ dataset = ReviewsDataset(use_vocab=True)
 dm = ReviewsDataModule(dataset)
 # TODO: Your code here
 # Train a plain model so that it reaches a train accuracy of >0.9.
+trainer = Trainer(max_epochs=10, gradient_clip_val=3, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn"))
+trainer.fit(model, datamodule=dm)
+
+trainer.test(model, datamodule=dm)
 
 # %%
 # Plot t-SNE embeddings of the thought vectors for training data
@@ -108,6 +135,23 @@ model_pf = LitSimpleLSTM(
 reviews_load_embeddings(model_pf.model.embedding, vocab.get_stoi())
 # TODO: Your code here
 
+# Train with GloVe-initialized embeddings
+trainer_pf = Trainer(max_epochs=10, gradient_clip_val=3, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn-glove"))
+trainer_pf.fit(model_pf, datamodule=dm)
+
+trainer_pf.test(model_pf, datamodule=dm)
+
+# (i) Training set thought vectors
+dm.setup("fit")
+train_loader = dm.train_dataloader()
+nextplot()
+_ = tsne_thought(model_pf, train_loader, DEVICE)
+
+# (ii) Validation set thought vectors
+val_loader = dm.val_dataloader()
+nextplot()
+_ = tsne_thought(model_pf, val_loader, DEVICE)
+
 # %% [markdown]
 # ### Task 5e
 
@@ -118,3 +162,55 @@ model_p = LitSimpleLSTM(vocab_size, embedding_dim, hidden_dim, num_layers, cell_
 reviews_load_embeddings(model_p.model.embedding, vocab.get_stoi())
 model_p.model.embedding.weight.requires_grad = False
 # TODO: Your code here
+
+trainer_p = Trainer(max_epochs=10, gradient_clip_val=3, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn-glove"))
+trainer_p.fit(model_p, datamodule=dm)
+
+trainer_p.test(model_p, datamodule=dm)
+
+# (i) Training set thought vectors
+dm.setup("fit")
+train_loader = dm.train_dataloader()
+nextplot()
+_ = tsne_thought(model_p, train_loader, DEVICE)
+
+# (ii) Validation set thought vectors
+val_loader = dm.val_dataloader()
+nextplot()
+_ = tsne_thought(model_p, val_loader, DEVICE)
+
+# %% [markdown]
+# # 5f)
+
+# %%
+from pytorch_lightning import Trainer
+from pytorch_lightning.tuner import Tuner
+
+datamodule = ReviewsDataModule(dataset)
+datamodule.setup("fit")
+
+# Find optimal learning rate
+model = LitSimpleLSTM(
+    vocab_size=len(datamodule.vocab),
+    embedding_dim=128,
+    hidden_dim=256,
+    num_layers=1,
+    cell_dropout=0.0,
+    lr=0.01,
+)
+datamodule = ReviewsDataModule(dataset)
+datamodule.setup("fit")
+
+trainer = Trainer(max_epochs=10)
+tuner = Tuner(trainer)
+
+# Automatically finds the best lr
+lr_finder = tuner.lr_find(model, datamodule=datamodule)
+best_lr = lr_finder.suggestion()
+print(f"Best lr: {best_lr}")
+
+# Train with the best lr
+model.lr = best_lr
+trainer = Trainer(max_epochs=20)
+trainer.fit(model, datamodule=datamodule)
+trainer.test(model, datamodule=datamodule)

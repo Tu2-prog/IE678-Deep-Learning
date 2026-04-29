@@ -1,13 +1,15 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
+#     custom_cell_magics: kql
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.17.1
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: dl-2
 #     language: python
 #     name: python3
 # ---
@@ -67,6 +69,7 @@ print(out)
 # %%
 # Initialize the trainer.
 # TODO: YOUR CODE HERE
+trainer = Trainer(max_epochs=10, gradient_clip_val=3, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn-4"))
 
 # %%
 # Train the model.
