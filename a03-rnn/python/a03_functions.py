@@ -19,7 +19,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 import torch.nn.functional as F
 from lightning import LightningModule, LightningDataModule
 import torchtext
-
+import string
 if hasattr(torchtext, "disable_torchtext_deprecation_warning"):
     torchtext.disable_torchtext_deprecation_warning()
 
@@ -85,7 +85,7 @@ class ReviewsDataset(Dataset):
     def __len__(self):
         """Returns the length of the dataset."""
         # YOUR CODE HERE
-        pass
+        return len(self._reviews)
 
     def __getitem__(self, idx):
         """
@@ -97,7 +97,11 @@ class ReviewsDataset(Dataset):
         Returns: a (review, label) tuple
         """
         # YOUR CODE HERE
-        pass
+        if self.vocab is not None:
+            review = self._reviews[idx]
+            review_numerical = [self.vocab[token] for token in review]
+            return review_numerical, self._labels[idx]
+        return self._reviews[idx], self._labels[idx]
 
     def _preprocess_reviews(self, raw_reviews):
         """
@@ -113,7 +117,17 @@ class ReviewsDataset(Dataset):
         Returns: list of tokenized reviews
         """
         # YOUR CODE HERE
-        pass
+        from torchtext.data.utils import get_tokenizer
+        basic_english_tokenizer = get_tokenizer("basic_english")
+        tokens = [basic_english_tokenizer(review) for review in raw_reviews]
+
+        # Remove punctuation from the tokens
+        punctuation = set(string.punctuation)
+        tokens = [
+            [token for token in review_tokens if token not in punctuation]
+            for review_tokens in tokens
+        ]
+        return tokens
 
     def _preprocess_labels(self, raw_labels):
         """
@@ -124,7 +138,8 @@ class ReviewsDataset(Dataset):
         # YOUR CODE HERE
         # Hint: You can remove leading and trailing whitespace from the raw
         # labels using the strip() method.
-        pass
+        labels = [1 if label.strip() == "positive" else 0 for label in raw_labels]
+        return labels
 
 
 # %% [markdown]
@@ -145,7 +160,20 @@ def review_collate_fn(raw_batch):
 
     """
     # YOUR CODE HERE
-    pass
+    reviews, labels = zip(*raw_batch)
+    processed = []
+    for review in reviews:
+        if len(review) >= MAX_SEQ_LEN:
+            processed.append(review[:MAX_SEQ_LEN])
+        else:
+            padding = [0] * (MAX_SEQ_LEN - len(review))  # 0 is <pad> token id
+            processed.append(review + padding)
+    
+    review_tensor = torch.tensor(processed, dtype=torch.long)  # (batch_size, MAX_SEQ_LEN)
+    label_tensor = torch.tensor(labels, dtype=torch.long)      # (batch_size,)
+    
+    return review_tensor, label_tensor
+    
 
 
 # %% [markdown]
