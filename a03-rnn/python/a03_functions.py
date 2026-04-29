@@ -203,10 +203,10 @@ class SimpleLSTM(nn.Module):
 
         # YOUR CODE HERE
         # Note: Use the following attributes to store the required layers.
-        self.embedding = ...
-        self.lstm = ...
-        self.fc = ...
-        self.sigmoid = ...
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers, dropout=cell_dropout, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, 1)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         """
@@ -224,6 +224,12 @@ class SimpleLSTM(nn.Module):
         hidden = self.init_hidden(len(x))
 
         # YOUR CODE HERE
+        embedded = self.embedding(x)
+        lstm_out, hidden = self.lstm(embedded, hidden)
+        output = self.fc(lstm_out[:, -1, :])
+        prob = self.sigmoid(output)
+
+        return prob, hidden
 
     def init_hidden(self, batch_size):
         """Initialize hidden states.
@@ -234,7 +240,10 @@ class SimpleLSTM(nn.Module):
         # YOUR CODE HERE
         # Note: ensure that the returned tensors are located on the same device
         # as the model's parameters.
-        pass
+        device = next(self.parameters()).device
+        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(device)
+        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim).to(device)
+        return (h0, c0)
 
 
 # %% [markdown]
