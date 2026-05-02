@@ -103,7 +103,7 @@ dataset = ReviewsDataset(use_vocab=True)
 dm = ReviewsDataModule(dataset)
 # TODO: Your code here
 # Train a plain model so that it reaches a train accuracy of >0.9.
-trainer = Trainer(max_epochs=10, gradient_clip_val=3, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn"))
+trainer = Trainer(max_epochs=10, check_val_every_n_epoch=1, logger=TensorBoardLogger("tb_logs", name="a03-rnn"))
 trainer.fit(model, datamodule=dm)
 
 trainer.test(model, datamodule=dm)
@@ -183,21 +183,14 @@ _ = tsne_thought(model_p, val_loader, DEVICE)
 # # 5f)
 
 # %%
-from pytorch_lightning import Trainer
-from pytorch_lightning.tuner import Tuner
+from lightning.pytorch import Trainer
+from lightning.pytorch.tuner import Tuner
 
 datamodule = ReviewsDataModule(dataset)
 datamodule.setup("fit")
 
 # Find optimal learning rate
-model = LitSimpleLSTM(
-    vocab_size=len(datamodule.vocab),
-    embedding_dim=128,
-    hidden_dim=256,
-    num_layers=1,
-    cell_dropout=0.0,
-    lr=0.01,
-)
+model_tuning = LitSimpleLSTM(vocab_size, embedding_dim, hidden_dim, num_layers, cell_dropout)
 datamodule = ReviewsDataModule(dataset)
 datamodule.setup("fit")
 
@@ -205,12 +198,24 @@ trainer = Trainer(max_epochs=10)
 tuner = Tuner(trainer)
 
 # Automatically finds the best lr
-lr_finder = tuner.lr_find(model, datamodule=datamodule)
+lr_finder = tuner.lr_find(model_tuning, datamodule=datamodule)
 best_lr = lr_finder.suggestion()
 print(f"Best lr: {best_lr}")
 
 # Train with the best lr
-model.lr = best_lr
-trainer = Trainer(max_epochs=20)
-trainer.fit(model, datamodule=datamodule)
-trainer.test(model, datamodule=datamodule)
+model_tuning.lr = best_lr
+trainer = Trainer(max_epochs=10)
+trainer.fit(model_tuning, datamodule=datamodule)
+trainer.test(model_tuning, datamodule=datamodule)
+
+# %%
+# (i) Training set thought vectors
+dm.setup("fit")
+train_loader = dm.train_dataloader()
+nextplot()
+_ = tsne_thought(model_tuning, train_loader, DEVICE)
+
+# (ii) Validation set thought vectors
+val_loader = dm.val_dataloader()
+nextplot()
+_ = tsne_thought(model_tuning, val_loader, DEVICE)
